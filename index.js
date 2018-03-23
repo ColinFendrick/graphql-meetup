@@ -44,7 +44,6 @@ const root = {
   },
   getMessage: ({id}) => {
     const message = messages.find(message => message.id === id)
-    console.log(messages, id.id)
     if (!message) {
       throw new Error('This message does not exist')
     }
