@@ -1,65 +1,37 @@
 'use strict'
 
 const { buildSchema } = require('graphql')
-const express = require('express')
-const graphql = require('express-graphql')
-// required to read files and schema:
 const fs = require('fs')
+const express = require('express')
+const gqlMiddleware = require('express-graphql')
 const path = require('path')
 
 const app = express()
 const port = process.env.port || 3000
-
-// building a schema from another file
 const schemaCode = fs.readFileSync(path.join(__dirname, 'lib', 'schema.graphql'), 'utf8')
+const storage = require('./lib/storage')
 
-const messages = [
-  {
-    id: '1',
-    text: 'This is a message',
-    author: 'F Thot Fitzgerald',
-    comment: 'Whatever'
-  },
-  {
-    id: '2',
-    text: 'This is another message',
-    author: 'Hulk Hogan',
-    comment: 'Brother'
-  },
-  {
-    id: '3',
-    text: 'This is yet a third message',
-    author: 'Steve Tide Pods',
-    comment: 'Whatever'
-  }
-]
-
-// Define schema
+// Defining a initial schema with GraphQL schema language
 const schema = buildSchema(schemaCode)
 
-// Create resolvers
+// Setup a resolver for the query defined in the schema
 const root = {
-  getAllMessages: () => {
-    return messages
+  getMessage: (args) => {
+    const message = storage.filter((item) => item.id === args.id)
+    return message[0]
   },
-  getMessage: ({id}) => {
-    const message = messages.find(message => message.id === id)
-    if (!message) {
-      throw new Error('This message does not exist')
-    }
-    else {
-      return message
-    }
+  getAllMessages: (args) => {
+    return storage
   }
 }
 
-// Put graphql in the end point
-app.use('/api', graphql({
+// Serve the GraphQL in /api using an express middleware
+app.use('/api', gqlMiddleware({
   schema: schema,
   rootValue: root,
   graphiql: true
 }))
 
 app.listen(port, () => {
-  console.log(`Server started http://localhost:${port}/api`)
+  console.log(`server is listening at http://localhost:${port}/api`)
 })
